@@ -13,12 +13,30 @@ namespace CustomersAPI
             builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("CustomersDb"));
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            });
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+            }
+
+            app.UseCors("AllowAll");
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Customers.AddRange(
+                    new Customer { Name = "John Doe", Email = "john@example.com" },
+                    new Customer { Name = "Jane Smith", Email = "jane@example.com" },
+                    new Customer { Name = "Alice Brown", Email = "alice@example.com" }
+                );
+                db.SaveChanges();
             }
 
             app.MapGet("/customers", async (AppDbContext db, [FromQuery] string? search, [FromQuery] string? sortBy, [FromQuery] bool desc, [FromQuery] int page = 1, [FromQuery] int pageSize = 10) =>
