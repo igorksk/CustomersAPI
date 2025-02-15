@@ -1,3 +1,5 @@
+using CustomersAPI.DataContext;
+using CustomersAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,17 +70,4 @@ namespace CustomersAPI
             app.Run();
         }
     }
-
-    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
-    {
-        public DbSet<Customer> Customers => Set<Customer>();
-    }
-
-    public class Customer
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-    }
-
 }
