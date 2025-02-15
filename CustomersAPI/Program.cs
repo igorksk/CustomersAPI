@@ -71,7 +71,7 @@ namespace CustomersAPI
                 customer.Email = updatedCustomer.Email;
                 await db.SaveChangesAsync();
 
-                return Results.NoContent();
+                return Results.Ok(customer);
             });
 
             app.MapDelete("/customers/{id}", async (AppDbContext db, int id) =>
