@@ -2,6 +2,7 @@ using CustomersAPI.DataContext;
 using CustomersAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace CustomersAPI
 {
@@ -47,7 +48,15 @@ namespace CustomersAPI
                     query = query.Where(c => c.Name.Contains(search) || c.Email.Contains(search));
 
                 if (!string.IsNullOrEmpty(sortBy))
-                    query = desc ? query.OrderByDescending(e => EF.Property<object>(e, sortBy)) : query.OrderBy(e => EF.Property<object>(e, sortBy));
+                {
+                    var property = typeof(Customer).GetProperty(sortBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    if (property != null)
+                    {
+                        query = desc
+                            ? query.OrderByDescending(c => EF.Property<object>(c, property.Name))
+                            : query.OrderBy(c => EF.Property<object>(c, property.Name));
+                    }
+                }
 
                 var total = await query.CountAsync();
                 var customers = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
