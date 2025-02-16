@@ -6,30 +6,41 @@ using System.Reflection;
 
 namespace CustomersAPI.Endpoints
 {
+    public class CustomerQueryParameters
+    {
+        public string? Search { get; set; }
+        public string? SortBy { get; set; }
+        public bool Desc { get; set; } = false;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
+
     public static class CustomerEndpoints
     {
         public static void MapRoutes(WebApplication app)
         {
-            app.MapGet("/customers", async (AppDbContext db, [FromQuery] string? search, [FromQuery] string? sortBy, [FromQuery] bool desc, [FromQuery] int page = 1, [FromQuery] int pageSize = 10) =>
+            app.MapGet("/customers", async (AppDbContext db, [AsParameters] CustomerQueryParameters parameters) =>
             {
                 var query = db.Customers.AsQueryable();
 
-                if (!string.IsNullOrEmpty(search))
-                    query = query.Where(c => c.Name.Contains(search) || c.Email.Contains(search));
-
-                if (!string.IsNullOrEmpty(sortBy))
+                if (!string.IsNullOrEmpty(parameters.Search))
                 {
-                    var property = typeof(Customer).GetProperty(sortBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    query = query.Where(c => c.Name.Contains(parameters.Search) || c.Email.Contains(parameters.Search));
+                }
+
+                if (!string.IsNullOrEmpty(parameters.SortBy))
+                {
+                    var property = typeof(Customer).GetProperty(parameters.SortBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
                     if (property != null)
                     {
-                        query = desc
+                        query = parameters.Desc
                             ? query.OrderByDescending(c => EF.Property<object>(c, property.Name))
                             : query.OrderBy(c => EF.Property<object>(c, property.Name));
                     }
                 }
 
                 var total = await query.CountAsync();
-                var customers = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var customers = await query.Skip((parameters.Page - 1) * parameters.PageSize).Take(parameters.PageSize).ToListAsync();
 
                 return Results.Ok(new { total, customers });
             });
